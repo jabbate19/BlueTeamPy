@@ -1,5 +1,6 @@
 from asyncio.subprocess import PIPE
-from scapy.all import sniff, Ether, IP, ARP, TCP, UDP, ICMP, get_if_addr
+from os import kill
+from scapy.all import sniff, Ether, IP, ARP, TCP, UDP, ICMP
 import logging
 import subprocess
 import json
@@ -7,7 +8,15 @@ import sys
 
 logging.basicConfig(filename='tracker.log', encoding='utf-8', level=logging.DEBUG)
 
-config_file = open(sys.argv[1], "r")
+print(sys.argv[1])
+print(sys.argv[2])
+
+if len(sys.argv) >= 2:
+    config_file = open(sys.argv[1], "r")
+else:
+    print("Input Config File Path: ", end="")
+    config_file = open(input(), "r")
+   
 config = json.load(config_file)
 config_file.close()
 
@@ -15,12 +24,14 @@ ports = config["ports"]
 
 ip = config["ip"]
 
-interface = config["interface"]
+interface = config["iface"]
 
 try:
     kill_mode = sys.argv[2] == "-k"
 except:
     pass
+
+print(kill_mode)
 
 def investigate(packet):
     out = ""
@@ -54,8 +65,8 @@ def get_pids(port):
     for line in out_lines[1:-1]:
         pid = line[1]
         binary = subprocess.Popen(["file",f"/proc/{pid}/exe"], stdout=PIPE, stderr=PIPE)
+        stdout, stderr = binary.communicate()
         if binary.returncode == 0:
-            stdout, stderr = binary.communicate()
             binary_path = str(stdout, "utf-8").lstrip(f"/proc/{pid}/exe: symbolic link to ")
             logging.warning(f"PID {pid} was communicting on unauthorized port {port} using command {binary_path}")
             if kill_mode:

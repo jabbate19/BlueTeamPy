@@ -3,6 +3,7 @@ from subprocess import Popen
 from scapy.all import get_if_addr
 import json
 from getpass import getpass
+import requests
 
 def exec_cmd(cmd):
     sub = Popen(cmd, stdout=PIPE, stderr=PIPE)
@@ -92,6 +93,7 @@ with open('/etc/passwd', "r") as file:
             else:
                 exec_cmd(["usermod","-L",user])
                 exec_cmd(["usermod","-s","/bin/false"])
+                exec_cmd(["gpasswd","--delete",user,"sudo"])
             stdout, stderr = exec_cmd(["crontab","-u",user,"-l"])[0]
             with open(f"cron_{user}", "wb") as cron_file:
                 cron_file.write(stdout)
@@ -121,12 +123,17 @@ config_json = json.dumps(config, indent=4)
 with open("config.json", "w") as config_file:
     config_file.write(config_json)
 
+exec_cmd(["mkdir","/root/old_files"])
+
 if yes_no("Execute sshd protection?"):
-    exec_cmd(["cp","setup/sshd_config","/root"])
-    exec_cmd(["chown","root","/root/sshd_config"])
-    exec_cmd(["chown",":root","/root/sshd_config"])
-    exec_cmd(["chmod","440","/root/sshd_config"])
-    exec_cmd(["cp","/root/sshd_config","/etc/ssh/sshd_config"])
+    exec_cmd(["cp","/etc/sshd_config","/root/old_files"])
+    exec_cmd(["chown","root","/root/old_files/sshd_config"])
+    exec_cmd(["chown",":root","/root/old_files/sshd_config"])
+    exec_cmd(["chmod","440","/root/old_files/sshd_config"])
+    new_sshd_config = requests.get("https://raw.githubusercontent.com/jabbate19/LinuxConfigs/master/sshd_config").text.split("\n")
+    with open("/etc/sshd_config","w") as sshd_config:
+        for line in new_sshd_config:
+            sshd_config.write(line)
     exec_cmd(["rm","/etc/ssh/sshd_config.d/*"])
     exec_cmd(["systemctl","restart","sshd"])
 

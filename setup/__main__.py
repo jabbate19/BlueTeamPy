@@ -4,12 +4,15 @@ from scapy.all import get_if_addr
 import json
 from getpass import getpass
 import requests
+import logging
 
 def exec_cmd(cmd):
+    logging.info(f"Executing {cmd}")
     sub = Popen(cmd, stdout=PIPE, stderr=PIPE)
     return sub.communicate(), sub.returncode
 
 def change_password(user, password):
+    logging.info(f"Changing password of {user}")
     p = Popen(["passwd", user], stdin=PIPE, stdout=PIPE, stderr=PIPE)
     p.communicate(input=f"{password}\n{password}".encode())
     return p.returncode
@@ -28,6 +31,9 @@ def yes_no(question):
         else:
             print("Invalid Response")
             print(f"{question} (y/n)? ", end="")
+
+exec_cmd(["mkdir","/root/documentation"])
+logging.basicConfig(filename='/root/documentation/setup.log', encoding='utf-8', level=logging.DEBUG)
 
 ports = []
 users = []
@@ -85,6 +91,8 @@ with open('/etc/passwd', "r") as file:
     for line in file:
         comps = line.split(":")
         user = comps[0]
+        uid = int(comps[2])
+        gid = int(comps[3])
         default_sh = comps[6]
         if not (default_sh == "/bin/false" or default_sh == "/usr/sbin/nologin"):
             keep_user = yes_no(f"Keep user {user}")
@@ -94,10 +102,17 @@ with open('/etc/passwd', "r") as file:
                 exec_cmd(["usermod","-L",user])
                 exec_cmd(["usermod","-s","/bin/false"])
                 exec_cmd(["gpasswd","--delete",user,"sudo"])
-            stdout, stderr = exec_cmd(["crontab","-u",user,"-l"])[0]
-            with open(f"cron_{user}", "wb") as cron_file:
-                cron_file.write(stdout)
-            # exec_cmd(["crontab","-u",user,"-r"])
+                logging.info(f"Disabled user {user}")
+        stdout, stderr = exec_cmd(["crontab","-u",user,"-l"])[0]
+        with open(f"cron_{user}", "wb") as cron_file:
+            cron_file.write(stdout)
+        if uid == 0:
+            logging.critical(f"User {user} has root UID!")
+        elif uid < 1000:
+            logging.warning(f"User {user} has admin-level UID!")
+        if gid == 0:
+            logging.critical(f"User {user} has root GID!")
+        
 
 print("Enter Service File to Keep Alive: ", end = "")
 service = input()
@@ -123,19 +138,57 @@ config_json = json.dumps(config, indent=4)
 with open("config.json", "w") as config_file:
     config_file.write(config_json)
 
-exec_cmd(["mkdir","/root/old_files"])
+exec_cmd(["mkdir","/root/documentation/old_files"])
+
+if yes_no("Execute sudo protection?"):
+    sudo_users, _ = exec_cmd(["getent","group","sudo"])
+    sudo_users = sudo_users.split(":")[3].split(",")
+    for user in sudo_users:
+        if exec_cmd(f"Remove {user} from sudo"):
+            exec_cmd(["gpasswd","-d",user,"sudo"])
+        else:
+            logging.warning(f"{user} has sudo power")
+    exec_cmd(["mkdir","/root/documentation/old_files/sudo"])
+    exec_cmd(["cp","/etc/sudoers","/root/documentation/old_files/sudo"])
+    exec_cmd(["cp","/etc/sudoers.d","/root/documentation/old_files/sudo"])
+    new_sudoers = requests.get("https://raw.githubusercontent.com/jabbate19/LinuxConfigs/master/sudoers").text
+    exec_cmd(["chmod","/etc/sudoers","540"])
+    with open("/etc/sudoers","w") as sudoers:
+        sudoers.write(new_sudoers)
+    exec_cmd(["chmod","/etc/sudoers","440"])
+    exec_cmd(["rm","-rf","/etc/sudoers.d/*"])
+    
 
 if yes_no("Execute sshd protection?"):
-    exec_cmd(["cp","/etc/sshd_config","/root/old_files"])
-    exec_cmd(["chown","root","/root/old_files/sshd_config"])
-    exec_cmd(["chown",":root","/root/old_files/sshd_config"])
-    exec_cmd(["chmod","440","/root/old_files/sshd_config"])
-    new_sshd_config = requests.get("https://raw.githubusercontent.com/jabbate19/LinuxConfigs/master/sshd_config").text.split("\n")
-    with open("/etc/sshd_config","w") as sshd_config:
-        for line in new_sshd_config:
-            sshd_config.write(line)
-    exec_cmd(["rm","/etc/ssh/sshd_config.d/*"])
+    exec_cmd(["mkdir","/root/documentation/old_files/ssh"])
+    exec_cmd(["cp","/etc/ssh","/root/documenation/old_files/ssh"])
+    new_sshd_config = requests.get("https://raw.githubusercontent.com/jabbate19/LinuxConfigs/master/sshd_config").text
+    with open("/etc/ssh/sshd_config","w") as sshd_config:
+        sshd_config.write(new_sshd_config)
+    exec_cmd(["rm","-rf","/etc/ssh/sshd_config.d/*"])
     exec_cmd(["systemctl","restart","sshd"])
+    for file in ["authorized_keys", "id_rsa"]:
+        stdout, stderr = exec_cmd(["find","/","-name",file])
+        for target in stdout:
+            print(f"authorized_keys file found: {target}")
+            if yes_no(f"Remove {target}"):
+                exec_cmd(["rm",target])
+                logging.info(f"{target} was found on system and removed")
+            else:
+                logging.warning(f"{target} was found on system and not removed")
+
+stdout, stderr = exec_cmd(["find","/","-perm","-4000","-print"])
+for file in stdout:
+    logging.warning(f"{file} has SUID Permissions!")
+stdout, stderr = exec_cmd(["find","/","-perm","-2000","-print"])
+for file in stdout:
+    logging.warning(f"{file} has SGID Permissions!")
+stdout, stderr = exec_cmd(["find","/","-type","d","\(","-perm","-g+w","-or","-perm","-o+w","\)","-print"])
+for dir in stdout:
+    logging.warning(f"Directory {dir} is world writable!")
+stdout, stderr = exec_cmd(["find","/","-!","-path","*/proc/*","-perm","-2","-type","f","-print"])
+for file in stdout:
+    logging.warning(f"{file} is world writable!")
 
 print("Please Check All Files:")
 print(".bashrc")

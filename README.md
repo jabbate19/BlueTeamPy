@@ -36,3 +36,12 @@ Resets configuration in the event of lost services
 - Restarts services
 - Re-hardens configs/users
 
+## Requirements
+
+This set requires [scapy](https://scapy.net) to run the tracker. This can be installed via pip.
+
+`pip install scapy` or `pip3 install scapy`
+
+## Running
+
+Since the files are named `__main__`, you can call all files from the root folder and using the module folder name. Ex. `python setup`

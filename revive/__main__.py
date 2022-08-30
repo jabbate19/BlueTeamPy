@@ -1,11 +1,6 @@
-from asyncio.subprocess import PIPE
-from subprocess import Popen
 import sys
 import json
-
-def exec_cmd(cmd):
-    sub = Popen(cmd, stdout=PIPE, stderr=PIPE)
-    return sub.communicate(), sub.returncode
+from utils import *
 
 if len(sys.argv) >= 2:
     config_file = open(sys.argv[1], "r")
@@ -15,6 +10,9 @@ else:
 
 config = json.load(config_file)
 config_file.close()
+
+if not verify_config(config):
+    raise Exception("Config Invalid")
 
 exec_cmd(["iptables","-F"])
 exec_cmd(["iptables","-t","mangle","-F"])

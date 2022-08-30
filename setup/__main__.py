@@ -5,32 +5,13 @@ import json
 from getpass import getpass
 import requests
 import logging
-
-def exec_cmd(cmd):
-    logging.info(f"Executing {cmd}")
-    sub = Popen(cmd, stdout=PIPE, stderr=PIPE)
-    return sub.communicate(), sub.returncode
+from utils import *
 
 def change_password(user, password):
     logging.info(f"Changing password of {user}")
     p = Popen(["passwd", user], stdin=PIPE, stdout=PIPE, stderr=PIPE)
     p.communicate(input=f"{password}\n{password}".encode())
     return p.returncode
-
-def yes_no(question):
-    print(f"{question} (y/n)? ", end="")
-    while True:
-        verification = input()
-        if len(verification) == 0:
-            print("Invalid Response")
-            print(f"{question} (y/n)? ", end="")
-        elif verification.lower()[0] == "y":
-            return True
-        elif verification.lower()[0] == "n":
-            return False
-        else:
-            print("Invalid Response")
-            print(f"{question} (y/n)? ", end="")
 
 exec_cmd(["mkdir","/root/documentation"])
 logging.basicConfig(filename='/root/documentation/setup.log', encoding='utf-8', level=logging.DEBUG)
@@ -56,6 +37,10 @@ while password != verify:
 
 change_password(main_account, password)
 change_password("root", password)
+
+stdout, stderr = exec_cmd(["ip","a"])[0]
+
+print(stdout)
 
 print("Enter internet interface: ", end="")
 interface = input()

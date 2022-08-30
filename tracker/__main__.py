@@ -5,6 +5,8 @@ import logging
 import subprocess
 import json
 import sys
+from utils import *
+
 
 logging.basicConfig(filename='tracker.log', encoding='utf-8', level=logging.DEBUG)
 
@@ -19,6 +21,9 @@ else:
    
 config = json.load(config_file)
 config_file.close()
+
+if not verify_config(config):
+    raise Exception("Config Invalid")
 
 ports = config["ports"]
 

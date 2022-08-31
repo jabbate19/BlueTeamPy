@@ -56,7 +56,7 @@ while password != verify:
 change_password(main_account, password)
 change_password("root", password)
 
-stdout, stderr = exec_cmd(["ip","a"])[0]
+stdout, stderr, code = exec_cmd(["ip","a"])[0]
 
 print(stdout)
 
@@ -106,7 +106,7 @@ with open('/etc/passwd', "r", encoding="utf-8") as file:
                 exec_cmd(["usermod","-s","/bin/false"])
                 exec_cmd(["gpasswd","--delete",user,"sudo"])
                 logging.info(f"Disabled user {user}")
-        stdout, stderr = exec_cmd(["crontab","-u",user,"-l"])[0]
+        stdout, stderr, code = exec_cmd(["crontab","-u",user,"-l"])[0]
         with open(f"cron_{user}", "wb") as cron_file:
             cron_file.write(stdout)
         if uid == 0:
@@ -171,7 +171,7 @@ if yes_no("Execute sshd protection?"):
     exec_cmd(["rm","-rf","/etc/ssh/sshd_config.d/*"])
     exec_cmd(["systemctl","restart","sshd"])
     for file in ["authorized_keys", "id_rsa"]:
-        stdout, stderr = exec_cmd(["find","/","-name",file])
+        stdout, stderr, code = exec_cmd(["find","/","-name",file])
         for target in stdout.split("\n")[:-1]:
             print(f"{file} file found: {target}")
             if yes_no(f"Remove {target}"):
@@ -180,16 +180,16 @@ if yes_no("Execute sshd protection?"):
             else:
                 logging.warning(f"{target} was found on system and not removed")
 
-stdout, stderr = exec_cmd(["find","/","-perm","-4000","-print"])
+stdout, stderr, code = exec_cmd(["find","/","-perm","-4000","-print"])
 for file in stdout:
     logging.warning(f"{file} has SUID Permissions!")
-stdout, stderr = exec_cmd(["find","/","-perm","-2000","-print"])
+stdout, stderr, code = exec_cmd(["find","/","-perm","-2000","-print"])
 for file in stdout:
     logging.warning(f"{file} has SGID Permissions!")
-stdout, stderr = exec_cmd(["find","/","-type","d","\(","-perm","-g+w","-or","-perm","-o+w","\)","-print"])
+stdout, stderr, code = exec_cmd(["find","/","-type","d","\(","-perm","-g+w","-or","-perm","-o+w","\)","-print"])
 for dir in stdout:
     logging.warning(f"Directory {dir} is world writable!")
-stdout, stderr = exec_cmd(["find","/","-!","-path","*/proc/*","-perm","-2","-type","f","-print"])
+stdout, stderr, code = exec_cmd(["find","/","-!","-path","*/proc/*","-perm","-2","-type","f","-print"])
 for file in stdout:
     logging.warning(f"{file} is world writable!")
 

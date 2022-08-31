@@ -38,7 +38,8 @@ def exec_cmd(cmd):
     Command provided as list of arguments
     """
     with Popen(cmd, stdout=PIPE, stderr=PIPE) as sub:
-        return sub.communicate(), sub.returncode
+        output = sub.communicate()
+        return output[0], output[1], sub.returncode
 
 def yes_no(question):
     """

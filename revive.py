@@ -17,8 +17,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("config", type=str, help="Configuration file")
 
-    t = datetime.now().strftime("%H_%M_%S")
-    logging.basicConfig(filename=f'/root/documentation/revive_{t}.log',
+    time = datetime.now().strftime("%H_%M_%S")
+    logging.basicConfig(filename=f'/root/documentation/revive_{time}.log',
                         encoding='utf-8',
                         level=logging.DEBUG)
 
@@ -30,10 +30,10 @@ def main():
     if not verify_config(config):
         raise Exception("Config Invalid")
 
-    stdout, stderr, return_code = exec_cmd(["iptables","-L"])
+    stdout, stderr, _ = exec_cmd(["iptables","-L"])
     print(stdout)
 
-    stdout, stderr, return_code = exec_cmd(["iptables","-t","mangle","-L"])
+    stdout, stderr, _ = exec_cmd(["iptables","-t","mangle","-L"])
     print(stdout)
 
     if yes_no("Is the firewall ok?"):
@@ -65,7 +65,7 @@ def main():
                 exec_cmd(["usermod","-s","/bin/false"])
 
     for service in config["services"]:
-        stdout, stderr, code = exec_cmd(["systemctl","status",service])
+        stdout, stderr, _ = exec_cmd(["systemctl","status",service])
         print(stdout)
         print(stderr)
         if yes_no("Re-enable/start service?"):

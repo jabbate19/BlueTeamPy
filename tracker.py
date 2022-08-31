@@ -20,8 +20,8 @@ def main():
     parser.add_argument("config", type=str, help="Configuration file")
     parser.add_argument("--kill", action="store_true", help="Auto-kill PIDs")
 
-    t = datetime.now().strftime("%H_%M_%S")
-    logging.basicConfig(filename='/root/documentation/tracker_{t}.log',
+    time = datetime.now().strftime("%H_%M_%S")
+    logging.basicConfig(filename=f'/root/documentation/tracker_{time}.log',
                         encoding='utf-8',
                         level=logging.DEBUG)
 
@@ -35,7 +35,7 @@ def main():
 
     ports = config["ports"]
 
-    ip = config["ip"]
+    ip = config["ip"] # pylint: disable=C0103
 
     interface = config["iface"]
 
@@ -86,7 +86,7 @@ def main():
                 pid, port, pid.cwd, pid.exe, pid.cmdline
             )
             if kill_mode:
-                exec_cmd(["kill","-9",pid])
+                pid.terminate()
 
 if __name__ == "__main__":
     main()

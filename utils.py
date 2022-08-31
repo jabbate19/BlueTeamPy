@@ -15,9 +15,9 @@ class PIDInfo():
         self.root = readlink(f"/proc/{pid}/root")
         self.cwd = readlink(f"/proc/{pid}/cwd")
         with open(f"/proc/{pid}/cmdline", "r", encoding="utf-8") as file:
-            self.cmdline = file.read()
+            self.cmdline = str(file.read(), "utf-8")
         with open(f"/proc/{pid}/environ", "r", encoding="utf-8") as file:
-            self.environ = file.read()
+            self.environ = str(file.read(), "utf-8")
 
     def terminate(self):
         """
@@ -84,4 +84,4 @@ def checkraw():
             print(pid_data)
             kill = yes_no("Do you want to terminate this raw socket")
             if kill:
-                exec_cmd(["kill","-9",pid_data.pid])
+                pid_data.terminate()

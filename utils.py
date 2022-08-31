@@ -73,15 +73,14 @@ def checkraw():
     """
     Checks for raw sockets and has user ensure that those active are desired
     """
-    output, return_code = exec_cmd(["ss","-0","-p"])
-    stdout, stderr = output
+    stdout, _, return_code = exec_cmd(["ss","-0","-p"])
     if return_code == 0:
         rows = str(stdout,"utf-8").split("\n")[1:-1]
         for row in rows:
             pid_loc = row.find("pid=")+4
             pid_end = row[pid_loc:].find(",")
             pid_data = PIDInfo(row[pid_loc:pid_loc+pid_end])
-            logging.warning(f"Raw socket detected! {pid_data}")
+            logging.warning("Raw socket detected! %s", pid_data)
             print(pid_data)
             kill = yes_no("Do you want to terminate this raw socket")
             if kill:

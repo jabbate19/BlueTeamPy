@@ -47,7 +47,7 @@ else:
         exec_cmd(["iptables","-A","INPUT","-p","tcp","--dport",port,"-j","ACCEPT"])
         exec_cmd(["iptables","-A","INPUT","-p","udp","--dport",port,"-j","ACCEPT"])
 
-    logging.info(f"Firewall reset to allow ports {ports}")
+    logging.info("Firewall reset to allow ports %s", ports)
 
 with open('/etc/passwd', "r", encoding="utf-8") as file:
     for line in file:
@@ -66,6 +66,6 @@ for service in config["services"]:
     if yes_no("Re-enable/start service?"):
         exec_cmd(["systemctl","enable",service])
         exec_cmd(["systemctl","start",service])
-        logging.warning(f"Re-enabled and started service {service}")
+        logging.warning("Re-enabled and started service %s", service)
 
 checkraw()

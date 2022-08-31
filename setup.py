@@ -24,15 +24,17 @@ def change_password(user, password):
     """
     Execute proper command to change the password of a given user
     """
-    logging.info(f"Changing password of {user}")
-    p = Popen(["passwd", user], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    p.communicate(input=f"{password}\n{password}".encode())
-    return p.returncode
+    logging.info("Changing password of %s", user)
+    with Popen(["passwd", user], stdin=PIPE, stdout=PIPE, stderr=PIPE) as p:
+        p.communicate(input=f"{password}\n{password}".encode())
+        return p.returncode
 
 exec_cmd(["mkdir","/root/documentation"])
 
 t = datetime.now().strftime("%H_%M_%S")
-logging.basicConfig(filename='/root/documentation/setup_{t}.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='/root/documentation/setup_{t}.log',
+                    encoding='utf-8',
+                    level=logging.DEBUG)
 
 ports = []
 users = []
@@ -105,16 +107,16 @@ with open('/etc/passwd', "r", encoding="utf-8") as file:
                 exec_cmd(["usermod","-L",user])
                 exec_cmd(["usermod","-s","/bin/false"])
                 exec_cmd(["gpasswd","--delete",user,"sudo"])
-                logging.info(f"Disabled user {user}")
+                logging.info("Disabled user %s", user)
         stdout, stderr, code = exec_cmd(["crontab","-u",user,"-l"])[0]
         with open(f"cron_{user}", "wb") as cron_file:
             cron_file.write(stdout)
         if uid == 0:
-            logging.critical(f"User {user} has root UID!")
+            logging.critical("User %s has root UID!", user)
         elif uid < 1000:
-            logging.warning(f"User {user} has admin-level UID!")
+            logging.warning("User %s has admin-level UID!", user)
         if gid == 0:
-            logging.critical(f"User {user} has root GID!")
+            logging.critical("User %s has root GID!", user)
         
 
 print("Enter Service File to Keep Alive: ", end = "")
@@ -150,7 +152,7 @@ if yes_no("Execute sudo protection?"):
         if exec_cmd(f"Remove {user} from sudo"):
             exec_cmd(["gpasswd","-d",user,"sudo"])
         else:
-            logging.warning(f"{user} has sudo power")
+            logging.warning("%s has sudo power", user)
     exec_cmd(["mkdir","/root/documentation/old_files/sudo"])
     exec_cmd(["cp","/etc/sudoers","/root/documentation/old_files/sudo"])
     exec_cmd(["cp","/etc/sudoers.d","/root/documentation/old_files/sudo"])
@@ -176,22 +178,26 @@ if yes_no("Execute sshd protection?"):
             print(f"{file} file found: {target}")
             if yes_no(f"Remove {target}"):
                 exec_cmd(["rm",target])
-                logging.info(f"{target} was found on system and removed")
+                logging.info("%s was found on system and removed", target)
             else:
-                logging.warning(f"{target} was found on system and not removed")
+                logging.warning("%s was found on system and not removed", target)
 
 stdout, stderr, code = exec_cmd(["find","/","-perm","-4000","-print"])
 for file in stdout:
-    logging.warning(f"{file} has SUID Permissions!")
+    logging.warning("%s has SUID Permissions!", file)
 stdout, stderr, code = exec_cmd(["find","/","-perm","-2000","-print"])
 for file in stdout:
-    logging.warning(f"{file} has SGID Permissions!")
-stdout, stderr, code = exec_cmd(["find","/","-type","d","\(","-perm","-g+w","-or","-perm","-o+w","\)","-print"])
-for dir in stdout:
-    logging.warning(f"Directory {dir} is world writable!")
-stdout, stderr, code = exec_cmd(["find","/","-!","-path","*/proc/*","-perm","-2","-type","f","-print"])
+    logging.warning("%s has SGID Permissions!", file)
+stdout, stderr, code = exec_cmd(
+    ["find","/","-type","d","\(","-perm","-g+w","-or","-perm","-o+w","\)","-print"]
+)
+for directory in stdout:
+    logging.warning("Directory %s is world writable!", directory)
+stdout, stderr, code = exec_cmd(
+    ["find","/","-!","-path","*/proc/*","-perm","-2","-type","f","-print"]
+)
 for file in stdout:
-    logging.warning(f"{file} is world writable!")
+    logging.warning("%s is world writable!", file)
 
 checkraw()
 

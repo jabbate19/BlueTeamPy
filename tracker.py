@@ -4,11 +4,9 @@ Scans network traffic for unauthorized port usage
 Will log anything occuring on a local port (send/recv) not specified in the config
 Can also automatically kill if desired
 """
-from asyncio.subprocess import PIPE
 from datetime import datetime
 import argparse
 import logging
-import subprocess
 import json
 from scapy.all import sniff, Ether, IP, ARP, TCP, UDP, ICMP # pylint: disable=E0611
 from utils import exec_cmd, verify_config, PIDInfo # pylint: disable=E0611
@@ -73,12 +71,14 @@ def get_pids(port):
 
     Logs data and kills if active
     """
-    lsof = subprocess.Popen(["lsof","-i",f":{port}"], stdout=PIPE, stderr=PIPE)
-    stdout, stderr = lsof.communicate()
+    stdout, _, _ = exec_cmd(["lsof","-i",f":{port}"])
     out_lines = [line.split() for line in str(stdout,"utf-8").split("\n")]
     for line in out_lines[1:-1]:
         pid = PIDInfo(line[1])
-        logging.warning(f"PID {pid} was communicting on unauthorized port {port} | cwd: {pid.cwd} | exe: {pid.exe} | cmd: {pid.cmdline}")
+        logging.warning(
+            "PID %s was communicting on unauthorized port %s | cwd: %s | exe: %s | cmd: %s",
+            pid, port, pid.cwd, pid.exe, pid.cmdline
+        )
         if kill_mode:
             exec_cmd(["kill","-9",pid])
 

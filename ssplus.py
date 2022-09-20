@@ -56,16 +56,26 @@ class Socket:
         """
         out = []
         pid_pos = 0
-        while (pid_pos := self.process.find("pid=", start=pid_pos)) != -1:
+        while (pid_pos := self.process.find("pid=", pid_pos)) != -1:
             pid_start = pid_pos + 4
-            pid_end = self.process.find(",", start=pid_start)
+            pid_end = self.process.find(",", pid_start)
             out.append(PIDInfo(int(self.process[pid_start:pid_end])))
+            pid_pos += 1
         return out
 
     def __str__(self):
         return f"{self.net_id} | {self.state} | {self.recv_q} | " \
                f"{self.send_q} | {self.local_addr} | {self.local_port} | " \
                f"{self.peer_addr} | {self.peer_port} | {self.process}"
+
+    def __hash__(self):
+        return self.__str__().__hash__()
+
+    def __repr__(self):
+        return str(self.__hash__())
+    
+    def __eq__(self, other):
+        return self.__hash__() == other.__hash__()
 
 def main():
     """
@@ -75,18 +85,19 @@ def main():
     logging.basicConfig(filename=f'/root/documentation/ssplus_{time}.log',
                         encoding='utf-8',
                         level=logging.DEBUG)
-    safe = []
+    safe = set()
     while True:
-        ss = exec_cmd(["/bin/ss", "-tulpn0"])
+        ss = exec_cmd(["/bin/ss", "-tupn0"])
         if not ss[2]:
-            lines = ss[0].split("\n")[1:]
+            lines = str(ss[0], "utf8").split("\n")[1:-1]
             for line in lines:
                 sock = Socket(line)
-                if sock not in safe:
+                if not (sock in safe):
                     logging.info("New socket detected: %s", sock)
                     print(sock)
+                    print(sock in safe)
                     if yes_no("Keep network socket?"):
-                        safe.append(sock)
+                        safe.add(sock)
                     else:
                         logging.warning("Socket idenitifed as malicious: %s", sock)
                         for pid in sock.analyze_pid():

@@ -23,7 +23,7 @@ class PIDInfo():
         """
         Sends SIGKILL to the process
         """
-        exec_cmd(["kill","-9",self.pid])
+        exec_cmd(["kill","-9",str(self.pid)])
 
     def __str__(self) -> str:
         return f"{self.pid} | {self.exe} | {self.root} | {self.cwd} | {self.cmdline}"

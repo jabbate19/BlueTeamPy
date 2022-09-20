@@ -11,11 +11,13 @@ from time import sleep
 from utils import exec_cmd, verify_config, yes_no, PIDInfo # pylint: disable=E0611
 
 parser = argparse.ArgumentParser()
+parser.add_argument("target", type=str, help="Target process name")
 parser.add_argument("--kill", action="store_true", help="Auto-kill PIDs")
 parser.add_argument("--speed", action="store_true", help="FAST")
 
-
 args = parser.parse_args()
+
+target = args.target
 
 kill_mode = args.kill
 
@@ -73,10 +75,9 @@ def main():
     Chom
     """
     time = datetime.now().strftime("%H_%M_%S")
-    logging.basicConfig(filename=f'/root/documentation/ssplus_{time}.log',
+    logging.basicConfig(filename=f'/root/documentation/quicc_{time}.log',
                         encoding='utf-8',
                         level=logging.DEBUG)
-    safe = set()
     while True:
         ss = exec_cmd(["/bin/ss", "-tupn0"])
         if not ss[2]:
@@ -84,19 +85,13 @@ def main():
             for line in lines:
                 sock = Socket(line)
                 pids = sock.analyze_pid()
-                if not sock in safe:
-                    logging.info("New socket detected: %s", sock)
-                    print(sock)
-                    print(sock in safe)
-                    if yes_no("Keep network socket?"):
-                        safe.add(sock)
-                    else:
-                        logging.warning("Socket idenitifed as malicious: %s", sock)
-                        for pid in pids:
-                            logging.warning("Terminated PID: %s", pid)
-                            print(pid)
-                            if kill_mode:
-                                pid.terminate()
+                if target in sock.process:
+                    logging.warning("Socket idenitifed as malicious: %s", sock)
+                    for pid in pids:
+                        logging.warning("Terminated PID: %s", pid)
+                        print(pid)
+                        if kill_mode:
+                            pid.terminate()
         if not speed_mode:
             sleep(0.01)
 

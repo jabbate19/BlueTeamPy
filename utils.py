@@ -15,9 +15,9 @@ class PIDInfo():
         self.root = readlink(f"/proc/{pid}/root")
         self.cwd = readlink(f"/proc/{pid}/cwd")
         with open(f"/proc/{pid}/cmdline", "r", encoding="utf-8") as file:
-            self.cmdline = str(file.read(), "utf-8")
+            self.cmdline = file.read()
         with open(f"/proc/{pid}/environ", "r", encoding="utf-8") as file:
-            self.environ = str(file.read(), "utf-8")
+            self.environ = file.read()
 
     def terminate(self):
         """

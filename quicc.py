@@ -6,9 +6,8 @@ Takes advantage of the ss command to quickly identify connections, even temporar
 from datetime import datetime
 import argparse
 import logging
-import json
 from time import sleep
-from utils import exec_cmd, verify_config, yes_no, PIDInfo # pylint: disable=E0611
+from utils import exec_cmd, PIDInfo # pylint: disable=E0611
 
 parser = argparse.ArgumentParser()
 parser.add_argument("target", type=str, help="Target process name")
@@ -41,7 +40,10 @@ class Socket:
         port_pos = peer.rfind(":")
         self.peer_addr = peer[:port_pos]
         self.peer_port = peer[(port_pos+1):]
-        self.process = comps[6]
+        try:
+            self.process = comps[6]
+        except IndexError:
+            self.process = ""
 
     def analyze_pid(self):
         """
@@ -52,7 +54,10 @@ class Socket:
         while (pid_pos := self.process.find("pid=", pid_pos)) != -1:
             pid_start = pid_pos + 4
             pid_end = self.process.find(",", pid_start)
-            out.append(PIDInfo(int(self.process[pid_start:pid_end])))
+            try:
+                out.append(PIDInfo(int(self.process[pid_start:pid_end])))
+            except FileNotFoundError:
+                pass
             pid_pos += 1
         return out
 

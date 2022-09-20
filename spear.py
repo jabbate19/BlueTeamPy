@@ -90,7 +90,8 @@ def main():
             for line in lines:
                 sock = Socket(line)
                 pids = sock.analyze_pid()
-                if target in sock.process:
+                if target in line:
+                    print(line)
                     logging.warning("Socket idenitifed as malicious: %s", sock)
                     for pid in pids:
                         logging.warning("Terminated PID: %s", pid)

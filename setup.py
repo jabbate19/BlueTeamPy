@@ -124,7 +124,7 @@ def sudo_protection():
 
     Re-writes sudoers file to have proper permissions
     """
-    sudo_users, _ = exec_cmd(["getent","group","sudo"])
+    sudo_users, _, _ = exec_cmd(["getent","group","sudo"])
     sudo_users = sudo_users.split(":")[3].split(",")
     for user in sudo_users:
         if exec_cmd(f"Remove {user} from sudo"):

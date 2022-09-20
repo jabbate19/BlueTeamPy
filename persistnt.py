@@ -8,8 +8,6 @@ import re
 from utils import UserInfo, exec_cmd # pylint: disable=E0611
 
 
-
-
 def main():
     """
     Executes all persistence detectors

@@ -9,18 +9,7 @@ import logging
 from time import sleep
 from utils import exec_cmd, PIDInfo # pylint: disable=E0611
 
-parser = argparse.ArgumentParser()
-parser.add_argument("target", type=str, help="Target process name")
-parser.add_argument("--kill", action="store_true", help="Auto-kill PIDs")
-parser.add_argument("--speed", action="store_true", help="FAST")
 
-args = parser.parse_args()
-
-target = args.target
-
-kill_mode = args.kill
-
-speed_mode = args.speed
 
 class Socket:
     """
@@ -102,4 +91,16 @@ def main():
             sleep(0.01)
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("target", type=str, help="Target process name")
+    parser.add_argument("--kill", action="store_true", help="Auto-kill PIDs")
+    parser.add_argument("--speed", action="store_true", help="FAST")
+
+    args = parser.parse_args()
+
+    target = args.target
+
+    kill_mode = args.kill
+
+    speed_mode = args.speed
     main()

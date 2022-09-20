@@ -11,26 +11,6 @@ import json
 from scapy.all import sniff, Ether, IP, ARP, TCP, UDP, ICMP # pylint: disable=E0611
 from utils import exec_cmd, verify_config, PIDInfo # pylint: disable=E0611
 
-parser = argparse.ArgumentParser()
-parser.add_argument("config", type=str, help="Configuration file")
-parser.add_argument("--kill", action="store_true", help="Auto-kill PIDs")
-
-args = parser.parse_args()
-
-with open(args.config, "r", encoding="utf-8") as config_file:
-    config = json.load(config_file)
-
-if not verify_config(config):
-    raise Exception("Config Invalid")
-
-ports = config["ports"]
-
-ip = config["ip"] # pylint: disable=C0103
-
-interface = config["iface"]
-
-kill_mode = args.kill
-
 
 def main():
     """
@@ -91,4 +71,23 @@ def get_pids(port):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("config", type=str, help="Configuration file")
+    parser.add_argument("--kill", action="store_true", help="Auto-kill PIDs")
+
+    args = parser.parse_args()
+
+    with open(args.config, "r", encoding="utf-8") as config_file:
+        config = json.load(config_file)
+
+    if not verify_config(config):
+        raise Exception("Config Invalid")
+
+    ports = config["ports"]
+
+    ip = config["ip"] # pylint: disable=C0103
+
+    interface = config["iface"]
+
+    kill_mode = args.kill
     main()

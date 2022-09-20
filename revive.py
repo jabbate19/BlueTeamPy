@@ -7,7 +7,7 @@ import argparse
 import json
 import logging
 from datetime import datetime
-from utils import checkraw, exec_cmd, verify_config, yes_no # pylint: disable=E0611
+from utils import UserInfo, checkraw, exec_cmd, verify_config, yes_no # pylint: disable=E0611
 
 
 def main():
@@ -54,15 +54,10 @@ def main():
 
         logging.info("Firewall reset to allow ports %s", ports)
 
-    with open('/etc/passwd', "r", encoding="utf-8") as file:
-        for line in file:
-            comps = line.split(":")
-            user = comps[0]
-            default_sh = comps[6]
-            if not ((default_sh in {"/bin/false","/usr/sbin/nologin"}) or user in config["users"]):
-                print(f"{user} became active again, it has been shut down again.")
-                exec_cmd(["usermod","-L",user])
-                exec_cmd(["usermod","-s","/bin/false"])
+    for user in UserInfo.get_all_users():
+        if not ((user.shell in {"/bin/false","/usr/sbin/nologin"}) or user.username in config["users"]):
+            print(f"{user} became active again, it has been shut down again.")
+            user.shutdown()
 
     for service in config["services"]:
         stdout, stderr, _ = exec_cmd(["systemctl","status",service])

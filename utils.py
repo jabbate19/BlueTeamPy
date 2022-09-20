@@ -5,6 +5,45 @@ from subprocess import PIPE, Popen
 from os import readlink
 import logging
 
+class UserInfo():
+    """
+    Chom
+    """
+    def __init__(self, line):
+        comps = line.split(":")
+        self.username = comps[0]
+        self.password = comps[1]
+        self.uid = int(comps[2])
+        self.gid = int(comps[3])
+        self.userinfo = comps[4]
+        self.homedir = comps[5]
+        self.shell = comps[6]
+
+    @staticmethod
+    def get_all_users():
+        """
+        eee
+        """
+        out = []
+        with open('/etc/passwd', "r", encoding="utf-8") as file:
+            for line in file:
+                try:
+                    out.append(UserInfo(line))
+                except IndexError:
+                    pass
+                except ValueError:
+                    pass
+        return out
+
+    def shutdown(self):
+        """
+        Run neccessary tasks to disable unwated user account
+        """
+        exec_cmd(["usermod","-L",self.username])
+        exec_cmd(["usermod","-s","/bin/false",self.username])
+        exec_cmd(["gpasswd","--delete",self.username,"sudo"])
+
+
 class PIDInfo():
     """
     Contains critical information of a process based on a PID

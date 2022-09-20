@@ -17,7 +17,7 @@ from getpass import getpass
 import logging
 from scapy.all import get_if_addr
 import requests
-from utils import checkraw, exec_cmd, yes_no # pylint: disable=E0611
+from utils import checkraw, exec_cmd, yes_no, UserInfo # pylint: disable=E0611
 # pylint: disable=W1401
 
 
@@ -38,9 +38,7 @@ def configure_firewall():
     """
     ports = []
 
-    stdout, _, _ = exec_cmd(["ip","a"])[0]
-
-    print(stdout)
+    print(str(exec_cmd(["ip","a"])[0], "utf8"))
 
     print("Enter internet interface: ", end="")
     interface = input()
@@ -71,6 +69,8 @@ def configure_firewall():
     for port in ports:
         exec_cmd(["iptables","-A","INPUT","-p","tcp","--dport",port,"-j","ACCEPT"])
         exec_cmd(["iptables","-A","INPUT","-p","udp","--dport",port,"-j","ACCEPT"])
+        exec_cmd(["iptables","-A","OUTPUT","-p","tcp","--sport",port,"-j","ACCEPT"])
+        exec_cmd(["iptables","-A","OUTPUT","-p","udp","--sport",port,"-j","ACCEPT"])
 
     return ip, interface, ports
 
@@ -79,33 +79,25 @@ def audit_users():
     Goes through all users on system, prompts to keep or remove
     Returns list of accepted users
     """
-    with open('/etc/passwd', "r", encoding="utf-8") as file:
-        users = []
-        for line in file:
-            comps = line.split(":")
-            user = comps[0]
-            uid = int(comps[2])
-            gid = int(comps[3])
-            default_sh = comps[6]
-            if not (default_sh == "/bin/false" or default_sh == "/usr/sbin/nologin"):
-                keep_user = yes_no(f"Keep user {user}")
-                if keep_user:
-                    users.append(user)
-                else:
-                    exec_cmd(["usermod","-L",user])
-                    exec_cmd(["usermod","-s","/bin/false"])
-                    exec_cmd(["gpasswd","--delete",user,"sudo"])
-                    logging.info("Disabled user %s", user)
-            stdout, _, _ = exec_cmd(["crontab","-u",user,"-l"])[0]
-            with open(f"cron_{user}", "wb") as cron_file:
-                cron_file.write(stdout)
-            if uid == 0:
-                logging.critical("User %s has root UID!", user)
-            elif uid < 1000:
-                logging.warning("User %s has admin-level UID!", user)
-            if gid == 0:
-                logging.critical("User %s has root GID!", user)
-        return users
+    users = []
+    for user in UserInfo.get_all_users():
+        if not (user.shell in {"/bin/false", "/usr/sbin/nologin"}):
+            keep_user = yes_no(f"Keep user {user.username}")
+            if keep_user:
+                users.append(user.username)
+            else:
+                user.shutdown()
+                logging.info("Disabled user %s", user.username)
+        stdout, _, _ = exec_cmd(["crontab","-u",user.username,"-l"])[0]
+        with open(f"cron_{user.username}", "wb") as cron_file:
+            cron_file.write(stdout)
+        if user.uid == 0:
+            logging.critical("User %s has root UID!", user.username)
+        elif user.uid < 1000:
+            logging.warning("User %s has admin-level UID!", user.username)
+        if user.gid == 0:
+            logging.critical("User %s has root GID!", user.username)
+    return users
 
 def select_services():
     """

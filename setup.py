@@ -62,7 +62,7 @@ def configure_firewall():
     exec_cmd(["iptables","-F"])
     exec_cmd(["iptables","-t","mangle","-F"])
     exec_cmd(["iptables","-P","INPUT","DROP"])
-    exec_cmd(["iptables","-P","OUTPUT","ACCEPT"])
+    exec_cmd(["iptables","-P","OUTPUT","DROP"])
     exec_cmd(["iptables","-P","FORWARD","ACCEPT"])
     exec_cmd(["iptables","-A","INPUT","-p","imcp","-j","ACCEPT"])
 

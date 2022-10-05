@@ -80,13 +80,17 @@ class PIDInfoWindows():
     """
     def __init__(self, pid):
         self.pid = pid
-        self.exe = findall("[A-Z]:\\.*", str(exec_cmd_pwsh(f"Get-Process {pid} -FileVersionInfo")[0], "utf8"))[0]
+        file_info = exec_cmd_pwsh(f"Get-Process -Id {pid} -FileVersionInfo")
+        try:
+            self.exe = findall("[A-Z]:\\\\.*", str(file_info[0], "utf8"))[0].strip()
+        except IndexError:
+            self.exe = f"\033[31m{str(file_info[1], 'utf8')}\033[0m"
 
     def terminate(self):
         """
         Sends SIGKILL to the process, but Wumbos
         """
-        exec_cmd(["powershell","-ExecutionPolicy","Bypass",f"End-Process -Id {self.pid}"])
+        exec_cmd_pwsh(f"End-Process -Id {self.pid}")
 
     def __str__(self) -> str:
         return f"{self.pid} | {self.exe}"

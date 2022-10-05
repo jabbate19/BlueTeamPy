@@ -56,7 +56,7 @@ def main():
     Chom
     """
     time = datetime.now().strftime("%H_%M_%S")
-    logging.basicConfig(filename=f'C:\\Users\\Joseph Abbate\\Desktop\\sswumbos_{time}.log',
+    logging.basicConfig(filename=f'.\\sswumbos_{time}.log',
                         encoding='utf-8',
                         level=logging.DEBUG)
     safe = set()

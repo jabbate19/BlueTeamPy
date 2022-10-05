@@ -7,7 +7,7 @@ from datetime import datetime
 import argparse
 import logging
 from time import sleep
-from utils import exec_cmd, yes_no # pylint: disable=E0611
+from utils import exec_cmd, yes_no, PIDInfoWindows # pylint: disable=E0611
 
 
 class Socket:

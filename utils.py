@@ -4,6 +4,7 @@ Utiltiies used across other modules
 from subprocess import PIPE, Popen
 from os import readlink
 import logging
+from re import findall
 
 class UserInfo():
     """
@@ -70,6 +71,30 @@ class PIDInfo():
     def __repr__(self) -> str:
         return self.__str__()
 
+
+class PIDInfoWindows():
+    """
+    Contains critical information of a process based on a PID
+
+    But... Windows!
+    """
+    def __init__(self, pid):
+        self.pid = pid
+        self.exe = findall("[A-Z]:\\.*", str(exec_cmd_pwsh(f"Get-Process {pid} -FileVersionInfo")[0], "utf8"))[0]
+
+    def terminate(self):
+        """
+        Sends SIGKILL to the process, but Wumbos
+        """
+        exec_cmd(["powershell","-ExecutionPolicy","Bypass",f"End-Process -Id {self.pid}"])
+
+    def __str__(self) -> str:
+        return f"{self.pid} | {self.exe}"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
 def exec_cmd(cmd):
     """
     Executes given command
@@ -79,6 +104,18 @@ def exec_cmd(cmd):
     with Popen(cmd, stdout=PIPE, stderr=PIPE) as sub:
         output = sub.communicate()
         return output[0], output[1], sub.returncode
+
+
+def exec_cmd_pwsh(cmd):
+    """
+    Executes given command
+
+    Command provided as list of arguments
+    """
+    with Popen(["powershell","-ExecutionPolicy","Bypass", cmd], stdout=PIPE, stderr=PIPE) as sub:
+        output = sub.communicate()
+        return output[0], output[1], sub.returncode
+
 
 def yes_no(question):
     """

@@ -1,5 +1,7 @@
 # Blue Team Tooling
 
+## This project has been moved to https://github.com/BlueTeamRust
+
 A collection of Python scripts to use in Blue Team Competitions (UB Lockdown, IRSec, ISTS) on Linux systems
 
 ## Subsystems
